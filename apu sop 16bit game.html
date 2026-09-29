@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="mn"><head><meta charset="utf-8"><title>APU DAIRY S&OP QUEST</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--k:#1a1c2c;--dk:#333c57;--wh:#f4f4f4;--gy:#94b0c2;--yl:#ffcd75;--rd:#b13e53;--cy:#41a6f6;--lg:#a7f070;--or:#ef7d57;--pu:#5d275d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--k);color:var(--wh);font-family:'Courier New',monospace}
+body{display:flex;flex-direction:column;align-items:center;padding:8px}
+#app{width:100%;max-width:1000px}
+.px{font-family:'Press Start 2P','Courier New',monospace}
+#hud{display:flex;justify-content:space-between;gap:8px;font-size:10px;margin:4px 0 10px;flex-wrap:wrap}
+#stage{position:relative;border:4px solid var(--wh);box-shadow:6px 6px 0 #0b0c14;background:#000}
+canvas{display:block;width:100%;image-rendering:pixelated}
+#dlg,#start{position:absolute;inset:6px;display:none;overflow:auto;background:var(--dk);border:4px solid var(--yl);padding:14px;font-size:13px;line-height:1.35}
+#start{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--k);inset:0;border:0;gap:16px;cursor:pointer}
+#start h1{font-size:clamp(14px,3.4vw,28px);color:var(--yl);margin:0;line-height:1.5}
+.blink{animation:b 1s steps(2) infinite;color:var(--lg);font-size:14px}@keyframes b{50%{opacity:0}}
+.kk{color:var(--or);font-size:11px;font-weight:bold}
+h2{font-family:'Press Start 2P','Courier New',monospace;font-size:clamp(12px,2.3vw,17px);line-height:1.5;margin:6px 0 10px}
+.g{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin:8px 0}
+.c{background:var(--k);border:3px solid var(--b,#fff);padding:8px 10px;box-shadow:3px 3px 0 #0b0c14}
+.c b{display:block;color:var(--b);margin-bottom:4px}.c small{color:var(--gy);display:block}
+ul{list-style:square;padding-left:18px;margin:4px 0}
+.kpi{text-align:center}.big{font-family:'Press Start 2P','Courier New',monospace;font-size:clamp(16px,3.5vw,26px);margin-top:10px}
+.hint{color:var(--gy);font-size:11px;text-align:right;margin:10px 0 0}
+#pad{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px}
+#pad div{display:flex;gap:10px}
+button{font-family:'Press Start 2P','Courier New',monospace;font-size:16px;width:68px;height:56px;background:var(--dk);color:var(--wh);border:4px solid var(--wh);box-shadow:4px 4px 0 #0b0c14;touch-action:none;user-select:none;cursor:pointer}
+button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #0b0c14}
+#ba{background:var(--rd)}#bj{background:var(--cy);color:var(--k)}
+.note{color:var(--gy);font-size:11px;text-align:center;margin-top:12px}
+#dlg{animation:pop .25s steps(5)}@keyframes pop{from{transform:scale(.5);opacity:0}}
+#start h1{animation:fl 2s steps(4) infinite}@keyframes fl{50%{transform:translateY(-8px)}}
+.mg{background:var(--k);border:3px solid var(--yl);padding:8px 10px;margin:12px 0}
+.mg canvas{width:100%;image-rendering:pixelated;display:block;margin:6px 0}
+.mg .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.mg button{width:40px;height:34px;font-size:14px;border-width:3px;box-shadow:2px 2px 0 #0b0c14}
+.st{font-family:'Press Start 2P','Courier New',monospace;font-size:11px;text-align:center;margin:6px 0;min-height:18px}
+.lv{display:flex;gap:3px}.lv i{width:14px;height:14px;background:var(--dk);border:2px solid #566c86}.lv i.on{background:var(--b)}
+.rc{width:100%;max-width:260px;display:block;margin:6px auto 0;image-rendering:pixelated;background:#0b0c14;cursor:pointer}
+</style></head><body>
+<div id="app">
+ <div id="hud" class="px"><span id="h1" style="color:var(--rd)">♥♥♥</span><span id="h2" style="color:var(--yl)">STAGE 0/7</span><span id="h3" style="color:var(--cy)">MILK 00</span></div>
+ <div id="stage">
+  <canvas id="cv" width="960" height="360"></canvas>
+  <div id="dlg"></div>
+  <div id="start"><h1 class="px">APU DAIRY<br>S&amp;OP QUEST</h1><div style="color:var(--gy)">БҮАТ Алба · Dairy Forum 2026</div><div class="blink px">&gt; PRESS START</div></div>
+ </div>
+ <div id="pad"><div><button id="bl">◀</button><button id="br">▶</button></div><div><button id="bj">B</button><button id="ba">A</button></div></div>
+ <div class="note">← → / A D: алхах · ↑ / W: үсрэх · SPACE / ENTER: "?" тэмдэгт ойртоод нээх · ESC: хаах</div>
+</div>
+<script>
+const cv=document.getElementById('cv'),c=cv.getContext('2d'),$=id=>document.getElementById(id);
+const C=(t,col,b)=>`<div class=c style="--b:${col}"><b>${t}</b>${b}</div>`;
+const U=a=>'<ul>'+a.map(x=>`<li>${x}</li>`).join('')+'</ul>';
+const T=(t,s,col)=>C(t,col,`<small>${s}</small>`);
+const Kp=(l,v,col,s)=>`<div class="c kpi" style="--b:${col}"><small>${l}</small>${s?`<small>${s}</small>`:''}<div class=big style="color:${col}">${v}</div></div>`;
+const RCV=(r,t)=>`<canvas class=rc data-r=${r} width=120 height=50></canvas><small style="text-align:center;color:var(--yl)">▶ ${t}</small>`;
+const Y='var(--yl)',CY='var(--cy)',LG='var(--lg)',OR='var(--or)',RD='var(--rd)';
+const S=[
+{n:'START',k:'ҮҮА ГАЗАР / БҮАТ АЛБА',t:'Борлуулалт, Үйл ажиллагаа төлвөлтийн алба – S&OP',h:`<p>Борлуулалт, үйлдвэрлэл, агуулах болон нийлүүлэлтийн сүлжээг нэгтгэн бизнесийн үр ашгийг нэмэгдүүлэх нь</p><div class=g>${C('Г.Оюунцэцэг',Y,'<small>БҮАТ ахлах менежер</small><small>2026.09.30</small>')}${C('DAIRY FORUM 2026',RD,'<small>APU DAIRY</small>')}</div>`},
+{n:'МОДЕЛЬ',k:'БҮАТ АЛБАНЫ НЭГДСЭН МОДЕЛЬ',t:'S&OP Алба — Бизнесийн төв холбогч нэгж',h:`${C('БҮАТ Алба · 7',RD,'<small>Sales & Operations Planning</small>')}<div class=g>${T('1. Борлуулалт','',CY)}${T('2. Маркетинг','',Y)}${T('3. Санхүү','',LG)}${T('4. Бүтээгдэхүүн хөгжүүлэлт','',CY)}${T('5. Нийлүүлэлт, Худалдан авалт','',LG)}${T('6. Үйлдвэрлэл','',RD)}${T('7. СББ Бяслаг үйлдвэрлэл','',OR)}</div>`},
+{n:'БҮТЭЦ',k:'БҮАТ АЛБАНЫ БҮТЭЦ & ЧИГ ҮҮРЭГ',t:'ҮҮА Нэгдсэн Төлөвлөлт · 7 FTEs',h:`${C('Ахлах менежер',RD,'<small>1 FTE</small>'+RCV(0,'ДАР → БАТЛАХ'))}<div class=g>${C('Агуулах төлөвлөлт',LG,'<small>1 FTE</small>'+RCV(1,'ДАР → НӨӨЦ НЭМЭХ'))}${C('Үйлдвэрлэл төлөвлөлт',CY,'<small>1 FTE</small>'+RCV(2,'ДАР → ХУРДЛАХ'))}${C('Ээлжийн супервайзер',OR,'<small>4 FTE</small>'+RCV(3,'ДАР → ЭЭЛЖ СОЛИХ'))}</div><div class=g>${C('Агуулах Төлөвлөлт',LG,U(['Нөөцийн түвшний оновчлол','Агуулахын багтаамжийн удирдлага','Дашборд & Аналитик']))}${C('Үйлдвэрлэлийн Төлөвлөлт',CY,U(['Эрэлтэд суурилсан үйлдвэрлэлийн төлөвлөгөө','Хүчин чадал болон үйлдвэрлэлийн хуваарь, нөөцийн ашиглалт','Үйл ажиллагааны уялдаа: борлуулалт, үйлдвэр, агуулах, худалдан авалт, сүү бэлтгэл']))}</div>`},
+{n:'ЭЭЛЖ',k:'ҮЙЛДВЭРЛЭЛИЙН ГҮЙЦЭТГЭЛИЙН УДИРДЛАГА · 4 FTEs',t:'Ээлжийн Супервайзеруудын Үндсэн Үүрэг',h:`<div class=g>${C('Үйл Ажиллагааны Тогтвортой Байдал',CY,U(['Шугамын тасралтгүй ажиллагааг хангах','Үйлдвэрлэлийн тасалдлыг бууруулах']))}${C('Албадын Уялдаа',Y,U(['Боловсруулах, савлах, инженеринг, агуулахын үйл ажиллагааны уялдааг хангаж асуудлыг шуурхай шийдэх.']))}${C('Гүйцэтгэлийн Хяналт',OR,U(['Батлагдсан үйлдвэрлэлийн төлөвлөгөөг хэрэгжүүлэх','Өдөр тутмын гүйцэтгэлийг хянах']))}${C('Эрсдэл ба Асуудлын Удирдлага',LG,U(['Эрсдэл, саатлыг урьдчилан илрүүлж, удирдлагад тогтмол мэдээлэн хамтран шийдвэрлэх.']))}</div>`},
+{n:'S&OP',k:'САРЫН ЭРГЭЛТТЭЙ ЦИКЛ',t:'S&OP Процесс',h:`<b style="color:var(--yl)">S&OP-ийн Үндсэн 5 Алхам:</b><div class=g>${T('1 · Бүтээгдэхүүний Хяналт','NPD хөгжүүлэлт ба портфолио удирдлага',RD)}${T('2 · Эрэлтийн Төлөвлөлт','Борлуулалтын таамаглал ба хэрэглэгчийн эрэлт',CY)}${T('3 · Нөөц ба Үйлдвэрлэлийн Төлөвлөлт','Хүчин чадал ба нийлүүлэлтийн тэнцвэр',OR)}${T('4 · Сценарийн Төлөвлөлт','Зөрүү ба эрсдлийн хувилбарууд боловсруулах','#c26fc2')}${T('5 · Удирдлагын Хяналт ба Эцсийн Төлөвлөгөө','Нэгдмэл шийдвэр баталгаажуулалт',LG)}</div><b style="color:var(--yl)">Үндсэн Ашиг Тус ба Зорилго</b><div class=g>${T('Нэгдсэн Төлөвлөлт','Эрэлт ба нийлүүлэлтийн сарын оновчтой тэнцвэрийг хангах.',CY)}${T('Албадын Уялдаа Холбоо','Борлуулалт, үйлдвэрлэл, худалдан авалт, ложистикийн нэгдмэл ажиллагаа.',Y)}${T('Эрсдэлийн Шийдэл','Хүчин чадал, OOS, сул зогсолт болон зөрүүг SOP процессоор шуурхай шийдэх.',LG)}</div><div class=mg><b style="color:var(--yl)">MINI GAME · НӨӨЦИЙН ТЭНЦЭЛ</b><small style="color:var(--gy);display:block">Нөөцийг 40–60% бүсэд 15 секунд барь. Demand ↑ → нөөц хомсдоно · Demand ↓ → нөөц илүүдэнэ · Үйлдвэрлэл ↑ → нөөц нэмэгдэнэ.</small><canvas id=mc width=480 height=150></canvas><div class=st id=ms></div><div class=r><span style="color:var(--cy)">DEMAND</span><button id=d0>−</button><div class=lv id=dl style="--b:var(--cy)"></div><button id=d1>+</button><span style="color:var(--or);margin-left:12px">ҮЙЛДВЭРЛЭЛ</span><button id=p0>−</button><div class=lv id=pl style="--b:var(--or)"></div><button id=p1>+</button></div><div class=r><button id=au style="width:auto;padding:0 10px;font-size:10px">AUTO: OFF</button><span id=sc class=px style="font-size:10px;color:var(--lg)"></span></div></div>`},
+{n:'KPI',k:'ГҮЙЦЭТГЭЛИЙН ҮЗҮҮЛЭЛТҮҮД',t:'Зорилтот KPI Үзүүлэлтүүд',h:`<b style="color:var(--cy)">SOP & PRODUCTION PLANNING</b><div class=g>${Kp('OPI TARGET','≥ 45%',LG)}${Kp('FRESHNESS','88%',CY)}${Kp('OTIF','≥ 90%',LG)}</div><b style="color:var(--lg)">WAREHOUSE & PROCUREMENT PLANNING</b><div class=g>${Kp('OOS (Мөнгөн дүн)','< 4.5%',LG)}${Kp('STOCK LEVEL DAYS','40 - 60 Өдөр',Y,'Агуулахын Нөөц')}</div>`},
+{n:'GOAL',k:'GAME CLEAR',t:'Анхаарал Хандуулсанд Баярлалаа!',h:`${C('APU DAIRY',Y,'<small>БҮАТ Алба / S&OP Department</small>')}<p id=fin class=px style="color:var(--lg);line-height:1.8"></p>`}
+];
+const G=300,N=7,X0=460,DX=640,WW=X0+DX*(N-1)+500,PH=54;
+const P={x:120,y:G-PH,vx:0,vy:0,f:1,on:1};
+const K={};let open=-1,seen=new Set(),milk=0,cam=0,started=0,jr=0,tm=0;
+const coins=[];for(let i=0;i<N-1;i++)for(let j=0;j<5;j++)coins.push({x:X0+DX*i+90+j*100,y:G-46-(j%2)*58,got:0});
+let ac;function beep(f,d){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.value=.04;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+(d||.08))}catch(e){}}
+const near=()=>{for(let i=0;i<N;i++)if(Math.abs(P.x+24-(X0+DX*i))<70)return i;return -1};
+function openDlg(i){open=i;seen.add(i);const s=S[i],d=$('dlg');d.innerHTML=`<div class=kk>${s.k}</div><h2>${s.t}</h2>${s.h}<p class=hint>[SPACE / ESC] ХААХ</p>`;d.style.display='block';d.scrollTop=0;
+ if(i==6)$('fin').textContent=seen.size==N?'★ ALL STAGES CLEAR ★  MILK '+milk:'Бусад шатыг үзээд ирээрэй ('+seen.size+'/7)';burst(X0+DX*i,G-180,16,['#ffcd75','#f4f4f4','#41a6f6'],5);if(i==4)initMG();if(i==2)initRC();beep(660);setTimeout(()=>beep(880),90)}
+function refocus(){try{const a=document.activeElement;if(a&&a!==document.body&&a.blur)a.blur();window.focus();cv.tabIndex=-1;cv.focus({preventScroll:true})}catch(e){}}
+function closeDlg(){open=-1;refocus();setTimeout(refocus,50);if(seen.size==N)burst(P.x+24,120,60,['#ffcd75','#b13e53','#41a6f6','#a7f070','#ef7d57'],9);$('dlg').style.display='none';beep(330)}
+function act(){if(!started){begin();return}if(open>=0){closeDlg();return}const i=near();if(i>=0)openDlg(i);else jump()}
+function jump(){jr=1}
+function begin(){started=1;$('start').style.display='none';beep(520);setTimeout(()=>beep(780),100)}
+$('start').onclick=begin;
+addEventListener('keydown',function kd(e){const k=e.key;
+ if([' ','Enter','e','E'].includes(k)){e.preventDefault();if(!e.repeat)act();return}
+ if(k=='Escape'){e.preventDefault();e.stopPropagation();if(open>=0)closeDlg();else refocus();return}
+ if(!started){begin();return}
+ if(['ArrowLeft','a','A'].includes(k)){K.L=1;e.preventDefault()}
+ if(['ArrowRight','d','D'].includes(k)){K.R=1;e.preventDefault()}
+ if(['ArrowUp','w','W'].includes(k)){e.preventDefault();jump()}});
+addEventListener('keyup',e=>{const k=e.key;if(k=='Escape')refocus();if(['ArrowLeft','a','A'].includes(k))K.L=0;if(['ArrowRight','d','D'].includes(k))K.R=0});
+const hold=(id,key)=>{const b=$(id);b.onpointerdown=e=>{e.preventDefault();if(!started)begin();K[key]=1};b.onpointerup=b.onpointerleave=b.onpointercancel=()=>K[key]=0};
+hold('bl','L');hold('br','R');
+addEventListener('blur',()=>{K.L=K.R=0});addEventListener('pointerdown',()=>window.focus());document.addEventListener('visibilitychange',()=>{K.L=K.R=0});
+$('ba').onpointerdown=e=>{e.preventDefault();act()};$('bj').onpointerdown=e=>{e.preventDefault();if(!started)begin();jump()};
+function step(){tm++;
+ if(open<0&&started){P.vx=((K.R?1:0)-(K.L?1:0))*3.4;if(K.R)P.f=1;if(K.L)P.f=-1}else P.vx=0;
+ if(jr&&P.on&&open<0&&started){P.vy=-11;P.on=0;burst(P.x+24,G-3,5,['#94b0c2'],3);beep(440,.06)}jr=0;
+ P.vy+=.55;P.x+=P.vx;P.y+=P.vy;if(P.y>=G-PH){if(!P.on)burst(P.x+24,G-3,6,['#94b0c2','#f4f4f4'],3);P.y=G-PH;P.vy=0;P.on=1}
+ P.x=Math.max(20,Math.min(WW-70,P.x));cam=Math.max(0,Math.min(WW-960,P.x-400));
+ coins.forEach(o=>{if(!o.got&&Math.abs(o.x-(P.x+24))<28&&Math.abs(o.y-(P.y+27))<40){o.got=1;milk++;burst(o.x,o.y,10,['#f4f4f4','#41a6f6','#ffcd75'],5);beep(990,.05)}});
+ if(P.on&&P.vx&&tm%6==0)burst(P.x+24-P.f*14,G-4,1,['#94b0c2'],1);
+ PT.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.l--});for(let i=PT.length;i--;)if(PT[i].l<=0)PT.splice(i,1);
+ mgStep();
+ $('h2').textContent='STAGE '+seen.size+'/7';$('h3').textContent='MILK '+String(milk).padStart(2,'0');
+ $('h2').style.color=seen.size==N?'var(--lg)':'var(--yl)'}
+const PT=[];function burst(x,y,n,cols,sp){for(let i=0;i<n;i++)PT.push({x,y,vx:(Math.random()-.5)*sp,vy:-Math.random()*sp,l:35+Math.random()*30|0,c:cols[i%cols.length],s:3+i%3})}
+const RC={a:[0,0,0,0],n:[0,0,0,0],day:1};
+function initRC(){document.querySelectorAll('.rc').forEach(k=>{const r=+k.dataset.r;k.onclick=()=>{RC.a[r]=120;if(r==1||r==0)RC.n[r]++;if(r==3)RC.day=!RC.day;beep(500+r*130,.08)}})}
+function per(q,x,y,hat,body,ph,arm){q('#ffcd75',x+1,y+3,4,3);q(hat,x+1,y,4,3);q('#1a1c2c',x+2,y+4,1,1);q('#1a1c2c',x+4,y+4,1,1);q(body,x,y+6,6,6);q('#ffcd75',x-1,y+(arm?2:7),1,arm?6:4);q('#ffcd75',x+6,y+7,1,4);q('#333c57',x+1,y+12,2,4);q('#333c57',x+3,y+12,2,ph?4:2)}
+function drawRC(){if(open!=2)return;const t=tm;document.querySelectorAll('.rc').forEach(k=>{const r=+k.dataset.r,x=k.getContext('2d'),q=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRect(a|0,b|0,w|0,h|0)},A=RC.a[r];if(A>0)RC.a[r]--;
+ q(r==3&&!RC.day?'#0b0c14':r==3?'#29366f':'#0b0c14',0,0,120,50);q('#5d275d',0,44,120,6);q('#38b764',0,44,120,2);
+ if(r==0){per(q,50,18,'#b13e53','#f4f4f4',0,A>0);q('#566c86',40,34,50,3);q('#333c57',44,37,3,7);q('#333c57',84,37,3,7);q('#333c57',60,29,14,5);q('#41a6f6',61,30,12,3);
+  q('#f4f4f4',96,6,20,22);q('#1a1c2c',97,7,18,20);[6,10,8,14].forEach((h,i)=>{h+=A>0?Math.sin(t/3+i)*3:0;q('#a7f070',99+i*4,26-h,3,h)});
+  if(A>0||t%240<40)[[0,4],[1,5],[2,6],[3,5],[4,4],[5,3],[6,2]].forEach(([a,b])=>q('#a7f070',44+a*2,4+b*2,2,2))}
+ if(r==1){[78,92,106].forEach((_,i)=>0);[10,24,38].forEach(y=>q('#566c86',78,y,38,2));q('#333c57',78,10,2,30);q('#333c57',114,10,2,30);
+  const n=(RC.n[1]+(t/100|0))%13;for(let j=0;j<n;j++){const rw=j/4|0,c=j%4;q('#ef7d57',81+c*8,32-rw*14,7,6);q('#ffcd75',81+c*8,32-rw*14,7,2)}
+  q('#ef7d57',4,38,7,6);q('#ef7d57',12,38,7,6);q('#ef7d57',8,32,7,6);
+  const ph=(t*(A>0?.8:.35))%140,u=ph<70?ph:140-ph,px=14+u*.85;per(q,px,28,'#38b764','#41a6f6',(t/6|0)%2,0);if(ph<70){q('#ef7d57',px,22,7,6);q('#ffcd75',px,22,7,2)}}
+ if(r==2){q('#5d275d',4,14,28,30);q('#333c57',8,18,20,10);const g=A>0||(t/20|0)%3==0;q(g?'#a7f070':'#b13e53',10,32,4,4);q(g?'#a7f070':'#ffcd75',18,32,4,4);q('#b13e53',24,6,5,8);
+  for(let i=0;i<3;i++){const p=(t*.7+i*20)%40;q('#94b0c2',25+Math.sin(p/5)*2,6-p*.25,3,3)}
+  const sp=A>0?1.7:.8;q('#566c86',32,40,88,4);for(let i=0;i<11;i++)q('#333c57',32+(i*8+t*sp)%88,41,3,2);
+  for(let i=0;i<3;i++){const px=32+(t*sp+i*30)%80;q('#ffcd75',px,32,10,8);q('#ef7d57',px,32,10,2)}
+  per(q,102,28,'#ef7d57','#5d275d',0,t%60<12);q('#f4f4f4',110,34,4,5)}
+ if(r==3){if(RC.day){q('#ffcd75',100,5,10,10)}else{q('#f4f4f4',100,5,10,10);q('#0b0c14',104,4,7,7);[[10,8],[30,14],[60,6],[80,12]].forEach(([a,b])=>q('#ffcd75',a,b,2,2))}
+  q('#333c57',0,36,120,8);for(let i=0;i<4;i++){const px=8+i*27+Math.sin(t/25+i*1.5)*5;per(q,px,28,'#ffcd75','#ef7d57',(t/8+i|0)%2,A>0&&(t/6+i|0)%2)}}
+ })}
+const M={d:3,p:3,s:50,auto:0,t:0,z:0,best:0,ev:'',et:0,win:0};
+const lv=(id,v)=>$(id).innerHTML=[1,2,3,4,5].map(i=>`<i class="${i<=v?'on':''}"></i>`).join('');
+const ui=()=>{lv('dl',M.d);lv('pl',M.p)};
+function initMG(){M.s=50;M.z=0;M.win=0;M.ev='';const b=(id,k,v)=>$(id).onclick=()=>{M[k]=Math.max(1,Math.min(5,M[k]+v));ui();beep(500,.05);$(id).blur()};
+ b('d0','d',-1);b('d1','d',1);b('p0','p',-1);b('p1','p',1);
+ $('au').onclick=()=>{M.auto=!M.auto;$('au').textContent='AUTO: '+(M.auto?'ON':'OFF');beep(600,.05);$('au').blur()};ui()}
+function mgStep(){if(open!=4||!$('ms'))return;M.t++;
+ M.s=Math.max(0,Math.min(100,M.s+(M.p-M.d)*.035));
+ if(M.auto&&M.t%300==0){const u=Math.random()<.5?1:-1;M.d=Math.max(1,Math.min(5,M.d+u*(Math.random()<.4?2:1)));M.ev=u>0?'⚡ DEMAND ↑ Сурталчилгаа!':'⚡ DEMAND ↓ Улирлын уналт';M.et=150;ui();beep(u>0?900:300,.15)}
+ if(M.et>0)M.et--;
+ const ok=M.s>=40&&M.s<=60;M.z=ok?M.z+1:0;M.best=Math.max(M.best,M.z);
+ if(M.z>=900&&!M.win){M.win=1;burst(P.x+24,120,60,['#ffcd75','#b13e53','#41a6f6','#a7f070'],9);beep(880,.3)}
+ const e=$('ms'),bl=M.t%40<28;let t,col;
+ if(M.win){t='★ S&OP MASTER! ★';col='var(--lg)'}
+ else if(M.et>0){t=M.ev;col='var(--yl)'}
+ else if(M.s<20){t=bl?'OOS! НӨӨЦ ХОМСДОЛ':'';col='var(--rd)'}
+ else if(M.s>80){t=bl?'ИЛҮҮДЭЛ НӨӨЦ!':'';col='var(--or)'}
+ else if(ok){t='БАЛАНС ✓';col='var(--lg)'}
+ else{t=M.s<40?'Нөөц буурч байна…':'Нөөц өсч байна…';col='var(--yl)'}
+ e.textContent=t;e.style.color=col;
+ $('sc').textContent='НӨӨЦ '+Math.round(M.s)+'% · БАЛАНС '+(M.z/60|0)+'/15с · BEST '+(M.best/60|0)+'с'}
+function drawMG(){const m=$('mc');if(open!=4||!m)return;const x=m.getContext('2d'),q=(c,a,b,w,h)=>{x.fillStyle=c;x.fillRect(a|0,b|0,w|0,h|0)};
+ q('#0b0c14',0,0,480,150);q('#5d275d',0,130,480,20);q('#38b764',0,130,480,4);
+ q('#333c57',10,70,80,60);q('#566c86',10,70,80,6);q('#b13e53',20,40,14,30);q('#b13e53',52,52,14,18);
+ for(let i=0;i<4;i++)q((tm/20+i|0)%3?'#ffcd75':'#333c57',20+i*18,92,10,10);
+ for(let i=0;i<M.p*2;i++){const ph=(tm*.8+i*29)%60;q('#94b0c2',24+(i%2)*32+Math.sin(ph/8+i)*4,42-ph*.6,6+ph/12,6+ph/12)}
+ q('#566c86',90,124,110,6);for(let i=0;i<M.p;i++){const px=90+(tm*1.6+i*110/M.p)%100;q('#ffcd75',px,112,12,12);q('#ef7d57',px,112,12,3)}
+ q('#b13e53',196,54,128,10);q('#f4f4f4',200,64,120,66);q('#333c57',204,66,112,64);
+ const col=M.s<20?'#b13e53':M.s>80?'#ef7d57':'#a7f070',n=Math.round(M.s/100*40);
+ for(let k=0;k<n;k++){const r=k/8|0,c=k%8;q('#1a1c2c',208+c*13,116-r*12,12,11);q(col,209+c*13,117-r*12,10,9)}
+ q('#a7f070',322,80,4,2);q('#a7f070',322,104,4,2);
+ for(let i=0;i<M.d;i++){const tx=330+(tm*(.7+M.d*.35)+i*110/M.d)%100,c=M.s<=0?'#b13e53':'#41a6f6';q(c,tx,108,26,16);q('#f4f4f4',tx+26,112,10,12);q('#1a1c2c',tx+4,122,6,6);q('#1a1c2c',tx+24,122,6,6);if(M.s>0)q('#ffcd75',tx+3,101,10,7)}
+ q('#b13e53',436,78,42,8);q('#ffcd75',440,86,34,44);q('#1a1c2c',450,104,14,26)}
+const R=(col,x,y,w,h)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h)};
+const COW=[['#ffcd75',2,0,3,2],['#ffcd75',12,0,13,2],['#1a1c2c',0,3,3,6],['#1a1c2c',12,3,15,6],['#f4f4f4',0,4,2,5],['#f4f4f4',13,4,15,5],['#1a1c2c',3,2,12,15],['#f4f4f4',4,3,11,14],['#333c57',4,3,6,5],['#333c57',9,4,11,6],['#1a1c2c',5,7,5,8],['#1a1c2c',10,7,10,8],['#ef7d57',4,10,11,13],['#1a1c2c',6,11,6,11],['#1a1c2c',9,11,9,11]];
+function cow(x,y,f,walk){const s=3;COW.forEach(([col,a,b,cc,d])=>{const x0=f>0?a:15-cc,x1=f>0?cc:15-a;R(col,x+x0*s,y+b*s,(x1-x0+1)*s,(d-b+1)*s)});
+ const al=walk&&Math.floor(tm/8)%2;R('#f4f4f4',x+4*s,y+16*s,3*s,al?s:2*s);R('#f4f4f4',x+9*s,y+16*s,3*s,al?2*s:s)}
+function txt(s,x,y,size,col,font){c.fillStyle=col;c.font=size+'px '+(font||"'Press Start 2P','Courier New'");c.textAlign='center';c.fillText(s,Math.round(x),Math.round(y))}
+function draw(){
+ R('#1a1c2c',0,0,960,360);
+ for(let i=0;i<50;i++){const x=(((i*211-cam*.1)%960)+960)%960;const z=(i+(tm/25|0))%5?2:4;R(i%3?'#41a6f6':'#ffcd75',x,(i*47)%190,z,z)}
+ for(let i=0;i<5;i++){const x=(((i*260+tm*.3-cam*.2)%1200)+1200)%1200-120,y=28+(i*23)%70;R('#333c57',x,y,64,12);R('#333c57',x+12,y-10,32,10)}
+ for(let x=0;x<960;x+=16){let h=Math.round((70+Math.abs(Math.sin((x+cam*.3)/170))*60)/8)*8;R('#29366f',x,G-h,16,h);
+  h=Math.round((40+Math.abs(Math.sin((x+cam*.55)/90+2))*45)/8)*8;R('#333c57',x,G-h,16,h)}
+ R('#5d275d',0,G,960,60);
+ for(let x=-((cam)%24);x<960;x+=24){const w=Math.floor((x+cam)/24);R(w%2?'#38b764':'#a7f070',x,G,24,12);R('#1a1c2c',x+8,G+26+(w%3)*8,6,6)}
+ R('#a7f070',0,G,0,0);
+ txt('APU DAIRY S&OP',180-cam,150,14,'#ffcd75');txt('> ШАТ БҮРТ "?" ДЭЭР ОЙРТООРОЙ',180-cam,178,9,'#94b0c2',"'Courier New'");
+ const nr=near();
+ for(let i=0;i<N;i++){const sx=X0+DX*i-cam,d=seen.has(i);
+  R('#94b0c2',sx-3,G-130,6,130);for(let f=0;f<5;f++)R(d?'#38b764':'#b13e53',sx+3+f*8,G-130+Math.round(Math.sin(tm/8+f)*2),8,26);txt(String(i+1),sx+23,G-110,12,'#f4f4f4');
+  const bob=Math.round(Math.sin(tm/20+i)*4);R('#1a1c2c',sx-24,G-206+bob,48,48);R(d?'#a7f070':'#ffcd75',sx-20,G-202+bob,40,40);
+  txt(d?'✓':'?',sx,G-172+bob,20,'#1a1c2c');txt(S[i].n,sx,G-218,11,'#f4f4f4',"'Courier New',monospace bold")}
+ coins.forEach(o=>{if(o.got)return;const x=o.x-cam,b=Math.round(Math.sin(tm/15+o.x)*3);R('#1a1c2c',x-8,o.y-14+b,16,26);R('#f4f4f4',x-6,o.y-12+b,12,22);R('#41a6f6',x-6,o.y-4+b,12,8)});
+ cow(P.x-cam,P.y-(P.on&&P.vx?Math.abs(Math.round(Math.sin(tm/4)*3)):0),P.f,Math.abs(P.vx)>0&&P.on);
+ PT.forEach(p=>R(p.c,p.x-cam,p.y,p.s,p.s));drawMG();drawRC();
+ if(nr>=0&&open<0){const x=P.x-cam+24;R('#1a1c2c',x-58,P.y-34,116,22);R('#ffcd75',x-55,P.y-31,110,16);txt('SPACE / A',x,P.y-18,8,'#1a1c2c')}
+ if(P.x>WW-300)txt('THE END',WW-160-cam,200,14,'#a7f070')}
+let last=0,acc=0;function loop(t){acc+=Math.min(50,t-last);last=t;while(acc>=16.67){step();acc-=16.67}draw();requestAnimationFrame(loop)}
+requestAnimationFrame(t=>{last=t;loop(t)});
+</script></body></html>
